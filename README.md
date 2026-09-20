@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/metalml-wordmark.png" alt="MetalML" width="720">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/metalml-wordmark-wide-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/metalml-wordmark-wide-light.png">
+    <img src="assets/metalml-wordmark-wide-light.png" alt="MetalML" width="100%">
+  </picture>
 </p>
 
 # MetalML: GPU-Accelerated Machine Learning for Apple Silicon
