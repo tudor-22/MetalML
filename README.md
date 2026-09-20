@@ -9,9 +9,25 @@
 # MetalML: GPU-Accelerated Machine Learning for Apple Silicon
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](pyproject.toml)
+[![PyPI](https://img.shields.io/pypi/v/metalml)](https://pypi.org/project/metalml/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6%20%7C%201.7-F7931E)](#scikit-learn-compatibility)
 [![Backend](https://img.shields.io/badge/Backend-Apple%20Metal-555555)](#how-metalml-uses-the-gpu)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+
+Install MetalML:
+
+```sh
+pip install metalml
+```
+
+[MetalML 0.2.1 on PyPI](https://pypi.org/project/metalml/0.2.1/) ·
+[Environment setup and requirements](#installation)
+
+Then use it in Python:
+
+```python
+import metalml as ml
+```
 
 **Your scikit-learn workflow. Your Mac's GPU.**
 
@@ -127,14 +143,20 @@ Other public estimators and utilities are provided by the installed scikit-learn
 
 ## Installation
 
-From a checkout of this repository, create an environment and install:
+To install the exact [0.2.1 release](https://pypi.org/project/metalml/0.2.1/),
+use `python -m pip install metalml==0.2.1`.
+
+For a fresh Python environment:
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install .
+python -m pip install metalml
 ```
+
+To install a local checkout instead, run `python -m pip install .` from the
+repository directory with your environment activated.
 
 | Requirement | Details |
 | --- | --- |
