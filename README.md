@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/metalml-wordmark.png" alt="MetalML" width="720">
+</p>
+
 # MetalML: GPU-Accelerated Machine Learning for Apple Silicon
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](pyproject.toml)
