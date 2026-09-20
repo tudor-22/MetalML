@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metalml"
+version = "0.2.1"
+description = "Scikit-learn compatible estimators with native Metal compute kernels"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.6,<1.8",
+  "pyobjc-framework-Metal>=10; sys_platform == 'darwin'",
+  "pyobjc-framework-MetalPerformanceShaders>=10; sys_platform == 'darwin'",
+]
+
+[project.optional-dependencies]
+dev = ["build", "ruff"]
+
+[tool.setuptools.packages.find]
+include = ["metalml*"]
+
+[tool.setuptools.package-data]
+metalml = ["_metal/*.metal"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
