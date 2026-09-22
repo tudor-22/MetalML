@@ -469,3 +469,51 @@ kernel void projection_tiled(device const float* x [[buffer(0)]],device const fl
     }
     if(row<n && col<c)out[row*c+col]=acc+bias[col];
 }
+
+// Row-wise scaling (out[i,j] = x[i,j] * scale[i]). Used to fold the IRLS
+// working weights into X so X'WX becomes an ordinary Gram product.
+kernel void scale_rows(device const float* x [[buffer(0)]],
+                       device const float* scale [[buffer(1)]],
+                       device float* out [[buffer(2)]],
+                       constant uint* p [[buffer(3)]], uint i [[thread_position_in_grid]]) {
+    if(i>=p[0]*p[1]) return;
+    out[i]=x[i]*scale[i/p[1]];
+}
+
+// One pass over the linear predictor produces both IRLS quantities: the
+// square root of the working weight p(1-p) and the score residual p-y.
+kernel void logistic_deriv(device const float* eta [[buffer(0)]],
+                           device const float* y [[buffer(1)]],
+                           device float* root [[buffer(2)]],
+                           device float* resid [[buffer(3)]],
+                           constant uint* p [[buffer(4)]], uint i [[thread_position_in_grid]]) {
+    if(i>=p[0]) return;
+    float v=eta[i];
+    float s=v>=0 ? 1.0f/(1.0f+exp(-v)) : exp(v)/(1.0f+exp(v));
+    float w=max(s*(1.0f-s),1e-12f);
+    root[i]=sqrt(w);
+    resid[i]=s-y[i];
+}
+
+// Binarize into a buffer so BernoulliNB counts reuse the MPS Gram path.
+kernel void binarize(device const float* x [[buffer(0)]],
+                     device float* out [[buffer(1)]],
+                     constant uint* p [[buffer(2)]], uint id [[thread_position_in_grid]]) {
+    if(id>=p[0]) return;
+    float threshold=as_type<float>(p[1]);
+    out[id]=(x[id]>threshold)?1.0f:0.0f;
+}
+
+// Squared deviations from a per-row class mean, gathered on the GPU and then
+// reduced by an MPS product with the one-hot label matrix.
+kernel void centered_squares(device const float* x [[buffer(0)]],
+                             device const int* labels [[buffer(1)]],
+                             device const float* means [[buffer(2)]],
+                             device float* out [[buffer(3)]],
+                             constant uint* p [[buffer(4)]], uint id [[thread_position_in_grid]]) {
+    uint d=p[1];
+    if(id>=p[0]*d) return;
+    uint i=id/d, j=id%d;
+    float v=x[id]-means[labels[i]*d+j];
+    out[id]=v*v;
+}

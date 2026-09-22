@@ -285,6 +285,42 @@ class MetalRuntime(InferenceRuntime):
 
         return KMeansSession(self, x, weights, n_clusters)
 
+    def logistic_irls(self, x, y, alpha, fit_intercept=True, max_iter=100, tol=1e-4):
+        """Train binary L2 logistic regression with Newton/IRLS on the GPU."""
+        from ._logistic import LogisticIRLS
+
+        with LogisticIRLS(self, x, y, alpha, fit_intercept, max_iter, tol) as session:
+            return session.run()
+
+    def _one_hot(self, labels, n_classes):
+        n = len(labels)
+        y = np.zeros((n, n_classes), np.float32)
+        y[np.arange(n), labels] = 1.0
+        return np.ascontiguousarray(y.T)
+
+    def class_sums(self, x, labels, n_classes, binarize=None):
+        """Class-conditional feature sums (rows of ``Y'X``) via an MPS product."""
+        source = x
+        if binarize is not None:
+            threshold = np.float32(binarize)
+            bits = int(np.frombuffer(threshold.tobytes(), dtype=np.uint32)[0])
+            source = self.run(
+                "binarize", [x], [(x.shape, np.float32)], [x.size, bits], (x.size,)
+            )[0]
+        return self.matmul(self._one_hot(labels, n_classes), source)
+
+    def class_centered_sums(self, x, labels, means):
+        """Per-class squared deviations from ``means`` via an MPS product."""
+        n, d = x.shape
+        centered = self.run(
+            "centered_squares",
+            [x, labels, means],
+            [(x.shape, np.float32)],
+            [n, d, means.shape[0]],
+            (x.size,),
+        )[0]
+        return self.matmul(self._one_hot(labels, means.shape[0]), centered)
+
     def update(self, x, labels, weights, centers):
         n, d = x.shape
         return self.run(

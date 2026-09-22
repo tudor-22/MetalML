@@ -103,11 +103,13 @@ on the operation and its configuration.
 | StandardScaler, MinMaxScaler, Normalizer | Statistics, scaling, normalization | Incremental fitting and unsupported settings |
 | KMeans | Initialization distances, Lloyd iterations, prediction, distances | Seed sampling and iteration control |
 | Ridge | Gram/cross-products, prediction | Condition checks and linear-system solve |
-| Linear regression and classification families, linear SVMs | Linear scores and prediction | Training; output conversion where needed |
+| LogisticRegression (binary, L2) | Newton/IRLS training, prediction | Small solve, multiclass, other penalties, weights |
+| LinearRegression | Normal-equation training, prediction | Ill-conditioned, wide, weighted or positivity-constrained fits |
+| Other linear regression and classification families, linear SVMs | Linear scores and prediction | Training; output conversion where needed |
 | PCA | Eligible covariance computation, projection, inverse projection | Eigensolver and other fitting configurations |
 | TruncatedSVD | Projection and inverse projection | Training |
 | MLPClassifier, MLPRegressor | Dense layers and activations | Training and label decoding |
-| GaussianNB, MultinomialNB, BernoulliNB, ComplementNB | Likelihood scores | Training and probability normalization |
+| GaussianNB, MultinomialNB, BernoulliNB, ComplementNB | Class statistics/training, likelihood scores | Probability normalization |
 | DecisionTree, ExtraTree, RandomForest, ExtraTrees | Tree traversal and forest averaging | Training and label decoding |
 | SVC, NuSVC, SVR, NuSVR, OneClassSVM | Kernel scores | Training, voting, calibrated SVC probabilities |
 | NearestNeighbors, KNeighborsClassifier, KNeighborsRegressor | Exact Euclidean distances and top-k selection | Index storage, classification votes, regression aggregation |
@@ -127,6 +129,17 @@ Other public estimators and utilities are provided by the installed scikit-learn
 - **Ridge:** GPU fitting requires scalar positive alpha, `auto` or `cholesky`,
   no sample weights or positivity constraint, at most 2,048 features, and at
   least as many samples as features. Ill-conditioned systems use sklearn.
+- **Logistic regression:** GPU training supports binary fits with dense
+  float32 input, L2 or no penalty, and at most 1,024 features. Multiclass
+  fits, L1/elasticnet penalties, class weights, and sample weights use
+  sklearn.
+- **Linear regression:** GPU training forms normal equations for dense float32
+  data with at most 2,048 features and at least as many samples as features.
+  Ill-conditioned, wide, weighted, and positivity-constrained fits use
+  sklearn's rank-revealing solver.
+- **Naive Bayes:** GPU training computes class-conditional statistics for dense
+  float32 input up to 8,192 features. Weighted fits, explicit parameter priors,
+  and single-class targets use sklearn.
 - **PCA:** GPU covariance fitting requires `auto`/`covariance_eigh`, `copy=True`,
   integer or `None` component counts, at most 1,000 features, and at least ten
   times as many samples as features. Poorly conditioned covariance uses sklearn.
