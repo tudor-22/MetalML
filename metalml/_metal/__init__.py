@@ -285,6 +285,13 @@ class MetalRuntime(InferenceRuntime):
 
         return KMeansSession(self, x, weights, n_clusters)
 
+    def logistic_irls(self, x, y, alpha, fit_intercept=True, max_iter=100, tol=1e-4):
+        """Train binary L2 logistic regression with Newton/IRLS on the GPU."""
+        from ._logistic import LogisticIRLS
+
+        with LogisticIRLS(self, x, y, alpha, fit_intercept, max_iter, tol) as session:
+            return session.run()
+
     def update(self, x, labels, weights, centers):
         n, d = x.shape
         return self.run(

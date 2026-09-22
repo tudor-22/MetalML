@@ -61,6 +61,7 @@ Private sklearn imports are outside the compatibility surface.
 | StandardScaler, MinMaxScaler, Normalizer | Dense statistics, scaling, normalization | Incremental fitting and unsupported settings |
 | KMeans | Initialization distances, Lloyd iterations, prediction and distances | Seed sampling and iteration control |
 | Ridge | Gram/cross-products and prediction | Condition checks and linear-system solve |
+| LogisticRegression (binary, L2) | IRLS training and prediction | Small solve, multiclass, other penalties and weights |
 | Supported linear models, linear SVMs and LDA | Linear scores and prediction | Training and output conversion where needed |
 | PCA | Eligible covariance computation, projection and inverse projection | Eigensolver and other fitting configurations |
 | TruncatedSVD | Projection and inverse projection | Training |
@@ -72,11 +73,14 @@ Private sklearn imports are outside the compatibility surface.
 
 Support is operation-specific. Ridge GPU fitting requires scalar positive
 regularization, an eligible solver, no sample weights or positivity constraint,
-at most 2,048 features and at least as many samples as features. PCA covariance
-fitting requires an eligible tall matrix, at most 1,000 features and supported
-component selection. Ill-conditioned fits use sklearn. Neighbors require dense
-brute-force Euclidean search with at most 32 neighbors. Other settings retain
-CPU behavior; strict Metal mode raises when a GPU operation must fall back.
+at most 2,048 features and at least as many samples as features. Binary L2
+logistic regression trains on the GPU with dense float32 input and at most
+1,024 features; multiclass, other penalties and weighted fits use sklearn.
+PCA covariance fitting requires an eligible tall matrix, at most 1,000 features
+and supported component selection. Ill-conditioned fits use sklearn. Neighbors
+require dense brute-force Euclidean search with at most 32 neighbors. Other
+settings retain CPU behavior; strict Metal mode raises when a GPU operation must
+fall back.
 
 ## Precision and backend selection
 

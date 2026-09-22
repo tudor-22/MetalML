@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["build", "ruff", "twine"]
+dev = ["build", "ruff", "twine", "pytest"]
 
 [project.urls]
 Repository = "https://github.com/tudor-22/MetalML"
@@ -43,3 +43,6 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
