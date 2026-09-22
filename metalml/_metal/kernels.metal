@@ -494,3 +494,26 @@ kernel void logistic_deriv(device const float* eta [[buffer(0)]],
     root[i]=sqrt(w);
     resid[i]=s-y[i];
 }
+
+// Binarize into a buffer so BernoulliNB counts reuse the MPS Gram path.
+kernel void binarize(device const float* x [[buffer(0)]],
+                     device float* out [[buffer(1)]],
+                     constant uint* p [[buffer(2)]], uint id [[thread_position_in_grid]]) {
+    if(id>=p[0]) return;
+    float threshold=as_type<float>(p[1]);
+    out[id]=(x[id]>threshold)?1.0f:0.0f;
+}
+
+// Squared deviations from a per-row class mean, gathered on the GPU and then
+// reduced by an MPS product with the one-hot label matrix.
+kernel void centered_squares(device const float* x [[buffer(0)]],
+                             device const int* labels [[buffer(1)]],
+                             device const float* means [[buffer(2)]],
+                             device float* out [[buffer(3)]],
+                             constant uint* p [[buffer(4)]], uint id [[thread_position_in_grid]]) {
+    uint d=p[1];
+    if(id>=p[0]*d) return;
+    uint i=id/d, j=id%d;
+    float v=x[id]-means[labels[i]*d+j];
+    out[id]=v*v;
+}

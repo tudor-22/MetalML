@@ -33,11 +33,65 @@ class _MetalPredict(BackendDiagnostics):
 
 
 class LinearRegression(_MetalPredict, _sk.LinearRegression):
-    """CPU least-squares fitting (preserves rank handling), Metal prediction."""
+    """Metal normal-equation fitting for well-conditioned dense problems.
+
+    The centered Gram and cross-products run on the GPU. Ill-conditioned or
+    unsupported problems retain sklearn's rank-revealing least-squares path.
+    """
 
     def fit(self, X, y, sample_weight=None):
-        record(self, "fit", "cpu", "Least-squares rank-revealing solver uses sklearn")
-        return super().fit(X, y, sample_weight=sample_weight)
+        self._validate_params()
+        reason = None
+        if sample_weight is not None:
+            reason = "Weighted least squares uses sklearn"
+        elif self.positive:
+            reason = "Non-negative least squares uses sklearn"
+        else:
+            shape = np.shape(X)
+            if len(shape) != 2 or shape[1] > 2048 or shape[1] > shape[0]:
+                reason = "Wide least squares uses sklearn"
+        runtime = select(self, "fit", X, reason=reason)
+        if runtime is None:
+            return super().fit(X, y, sample_weight=sample_weight)
+
+        x, target = validate_data(
+            self, X, y, dtype=np.float32, multi_output=True, y_numeric=True, ensure_all_finite=False
+        )
+        x, target = as_float32(x), as_float32(target)
+        if not np.isfinite(target).all():
+            select(self, "fit", X, reason="Targets exceed float32 range; using sklearn")
+            return super().fit(X, y, sample_weight=sample_weight)
+        x_mean = x.mean(axis=0, dtype=np.float64) if self.fit_intercept else np.zeros(x.shape[1])
+        y_mean = (
+            target.mean(axis=0, dtype=np.float64)
+            if self.fit_intercept
+            else np.zeros(target.shape[1:] or ())
+        )
+        gram, cross = runtime.ridge_products(
+            x,
+            target.reshape(len(x), -1),
+            x_mean=x_mean if self.fit_intercept else None,
+            y_mean=y_mean if self.fit_intercept else None,
+        )
+        gram = gram.astype(np.float64)
+        cross = cross.astype(np.float64)
+        # Normal equations square the condition number; only trust them when
+        # the centered Gram is comfortably positive definite.
+        safe = False
+        values = None
+        if np.isfinite(gram).all():
+            values = eigvalsh(gram, check_finite=False)
+            safe = values[0] > 0 and values[-1] / values[0] <= 1e4
+        if not safe:
+            select(self, "fit", X, reason="Ill-conditioned least squares uses sklearn")
+            return super().fit(X, y, sample_weight=sample_weight)
+        coef = cho_solve(cho_factor(gram, check_finite=False), cross, check_finite=False).T
+        self.coef_ = coef[0].astype(np.float32) if target.ndim == 1 else coef.astype(np.float32)
+        self.intercept_ = np.asarray(y_mean - x_mean @ self.coef_.T, dtype=np.float32)
+        self.rank_ = int(x.shape[1])
+        self.singular_ = np.sqrt(values[::-1]).astype(np.float32)
+        record(self, "fit", "metal+cpu")
+        return self
 
 
 class LogisticRegression(BackendDiagnostics, _sk.LogisticRegression):
