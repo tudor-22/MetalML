@@ -114,9 +114,9 @@ Forwarded sklearn classes retain their original interface.
 ## Status and limitations
 
 MetalML is experimental and is not a complete GPU port of scikit-learn.
-Execution has been verified on an AMD Radeon Pro 5300M. Apple Silicon is the
-target platform, but physical Apple Silicon validation and performance tuning
-are still pending. Other operating systems have not been tested on physical
+It has been tested on an M5 MacBook Pro and an M6 iMac, and execution has also
+been verified on an AMD Radeon Pro 5300M. Performance tuning for Apple Silicon
+is still in progress. Other operating systems have not been tested on physical
 hosts. No general speedup is promised.
 
 Small operations can favor CPU. Current performance routing rules are specific
