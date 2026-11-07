@@ -183,10 +183,10 @@ The package includes its Metal shader source, which compiles for the selected
 GPU on first use. Later operations reuse compiled pipelines. Installation does
 not require CUDA, PyTorch, MLX, or a separate Xcode project.
 
-**Hardware status:** MetalML is experimental. Apple Silicon is the target
-platform; physical Apple Silicon validation and performance tuning are still
-pending. GPU execution has been verified on an Intel Mac with an AMD Radeon Pro
-5300M. Other operating systems use sklearn CPU fallback.
+**Hardware status:** MetalML is experimental. It has been tested on an M5
+MacBook Pro and an M6 iMac, and GPU execution has also been verified on an Intel
+Mac with an AMD Radeon Pro 5300M. Performance tuning for Apple Silicon is still
+in progress. Other operating systems use sklearn CPU fallback.
 
 ## Scikit-learn compatibility
 
@@ -272,7 +272,7 @@ python -m build
 reports, or feature requests. Include the MetalML and sklearn versions, Mac
 model, output of `ml.backend_info()`, and a minimal example.
 
-Areas for contribution include Apple Silicon validation and tuning, GPU
+Areas for contribution include Apple Silicon tuning, GPU
 training for more estimators, sparse algorithms, and keeping data on the GPU
 across pipeline steps. Performance contributions should compare complete
 operations with sklearn on the same hardware and include numerical checks.
